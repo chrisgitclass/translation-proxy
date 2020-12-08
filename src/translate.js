@@ -40,7 +40,7 @@ export const createConnectionOption = (conf) => {
           path: '/language/translate/v2',
           headers: {
             'Authorization': 'Bearer ' + key,
-            'Contetn-Type': 'application/json; charset=utf-8'
+            'Content-Type': 'application/json; charset=utf-8'
           }
         });
       })

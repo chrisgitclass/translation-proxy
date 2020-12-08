@@ -1,0 +1,37 @@
+{
+  "cacheEnabled": false,
+  "cacheSkipUrls": ["do-not-cache-if-requested-url-contains-keyword"],
+  "cacheSkipCookies": ["do-not-cache-if-request-contains-cookie"],
+  "cacheShortTTL": 60,
+  "cacheTTL": [
+      { "type": "text/html",       "ttl":  86400 },
+      { "type": "text/css",        "ttl": 259200 },
+      { "type": "text",            "ttl": 604800 },
+      { "type": "application/pdf", "ttl": 604800 },
+      { "type": "application",     "ttl": 259200 },
+      { "type": "image",           "ttl": 604800 },
+      { "type": "default",         "ttl": 604800 }
+  ],
+  
+  "proxiedHosts": ["localhost"],
+  "purgeAllowedIps": ["127.0.0.1"],
+  "translationSelectors": ["main", "footer"],
+  "maxPageSize": 80000,
+  "maxTextPerRequest": 12000,
+  "domBreakdownThreshold": 250,
+  "keyPath1": "c:/Users/chris/downloads/chris-translation-1-74107fc9c012.json",
+  "keyPath": "c:/Users/chris/Downloads/documenttranslationcredentials (1).json",
+  "gcloudPath": "\"C:/Users/chris/AppData/Local/Google/Cloud SDK/google-cloud-sdk/bin/gcloud\"",
+  "serverHttpPort": 80,
+  "serverHttpsPort": 443,
+  "targetHttpPort": 81,
+  "targetHttpsPort": 444,
+  "shutdownGrace": 3000,
+  "sslCert": "./certs/test.pem",
+  "sslKey": "./certs/test.key",
+  "redisHost": "127.0.0.1",
+  "redisPort": 6379,
+  "enableLog": true,
+  "logLevel": "info",
+  "logDir": "./logs"
+}

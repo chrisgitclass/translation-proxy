@@ -47,7 +47,7 @@ export const setUpResponseHandler = (translateFunc, cacheHandler) => {
 
   ResponseHandler.sendBuffer = (res, buffer, proxyResObj, logPrefix) => {
     //console.log(logPrefix + ': ' + buffer.length + ' == ' + proxyResObj.headers['content-length']);
-    Logger.info(logPrefix + ': ' + buffer.length + ' == ' + proxyResObj.headers['content-length']);
+    Logger.info(`${logPrefix}: ${buffer.length} == ${proxyResObj.headers['content-length']}   cookies=${proxyResObj.headers['set-cookie']}`);
     res.writeHead(proxyResObj.statusCode, proxyResObj.statusMessage, proxyResObj.headers)
     res.end(buffer);
   }
@@ -67,12 +67,12 @@ export const setUpResponseHandler = (translateFunc, cacheHandler) => {
       } else {
         gzipped = await compressAsync(translatedHtml, proxyResObj.encoding);
         proxyResObj.headers['content-length'] = gzipped.length;
-        const cookies = proxyResObj.headers['set-cookie'] || [];
-        cookies.push('SELECTEDLANG=' + proxyResObj.lang);
-        proxyResObj.headers['set-cookie'] = cookies;
         ResponseCache.save(reqObj, proxyResObj.lang, proxyResObj, gzipped);
       }
-      //console.log(logPrefix + 'END: RETURNING ' + pageType + ': ' + proxyResObj.headers['content-length']);
+      const cookies = proxyResObj.headers['set-cookie'] || [];
+      cookies.push(`SELECTEDLANG=${proxyResObj.lang};path=/;`);
+      proxyResObj.headers['set-cookie'] = cookies;
+     //console.log(logPrefix + 'END: RETURNING ' + pageType + ': ' + proxyResObj.headers['content-length']);
       Logger.info(logPrefix + 'END: RETURNING ' + pageType + ': ' + proxyResObj.headers['content-length']);
       res.writeHead(proxyResObj.statusCode, proxyResObj.statusMessage, proxyResObj.headers);
       res.end(gzipped);

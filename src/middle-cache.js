@@ -1,5 +1,6 @@
 
 import { serverError } from './error-handler.js';
+import Logger from './logger.js';
 
 export const setUpMiddleCache = (responseHandler, cacheHandler) => {
   const ResponseHandler = responseHandler;
@@ -19,6 +20,10 @@ export const setUpMiddleCache = (responseHandler, cacheHandler) => {
       const translated = await ResponseCache.get(obj, obj.lang);
       if (translated) {
         const savedRes = translated.res
+        let cookies = savedRes.headers['set-cookie'] || [];
+        cookies.push(`SELECTEDLANG=${obj.lang};path=/;`);
+        savedRes.headers['set-cookie'] = cookies;
+
         if (ResponseCache.validate(obj, savedRes)) {
           ResponseHandler.sendNotModified(res, savedRes, logPrefix);
         } else {
@@ -39,6 +44,8 @@ export const setUpMiddleCache = (responseHandler, cacheHandler) => {
         if (ResponseCache.validate(obj, savedRes)) {
           ResponseHandler.sendNotModified(res, savedRes, logPrefix);
         } else {
+          // delete set-cookie to use currently set cookie value, not whats in redis
+          delete savedRes.headers['set-cookie'];
           ResponseHandler.sendBuffer(res, original.buffer, savedRes, logPrefix + 'END: RETURNING CACHED ORIGINAL');
         }
       }

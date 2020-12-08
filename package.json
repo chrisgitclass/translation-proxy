@@ -3,16 +3,17 @@
   "version": "1.0.0",
   "description": "The proxy server translates the contents from the origin by using Google Cloud Translation API",
   "main": "dist/server.js",
+  "type": "module",
   "scripts": {
-    "exec": "babel-node src/server.js",
+    "exec": "nodemon src/server.js",
     "serv": "babel-node src/server.js",
     "build": "babel src --out-dir dist -s",
-    "unit": "NODE_ENV=test mocha  --require @babel/register './test/proxy-test.js' --exit || true",
-    "unit5": "NODE_ENV=test mocha --require @babel/register './test/middle-firewall-test.js' --exit",
-    "unit2": "NODE_ENV=test mocha --require @babel/register './test/middle-cache-purger-test.js' --exit",
-    "unit3": "NODE_ENV=test mocha --require @babel/register './test/response-cache-test.js' --exit",
-    "unit4": "NODE_ENV=test mocha --require @babel/register './test/cache-test.js' --exit",
-    "test": "NODE_ENV=test mocha  --require @babel/register './test/**/*.{js,es6}' --exit || true"
+    "unit": "set NODE_ENV=test && mocha  --require @babel/register './test/proxy-test.js' --exit",
+    "unit5": "set NODE_ENV=test && mocha --require @babel/register './test/middle-firewall-test.js' --exit",
+    "unit2": "set NODE_ENV=test && mocha --require @babel/register './test/middle-cache-purger-test.js' --exit",
+    "unit3": "set NODE_ENV=test && mocha --require @babel/register './test/response-cache-test.js' --exit",
+    "unit4": "set NODE_ENV=test && mocha --require @babel/register './test/cache-test.js' --exit",
+    "test": "set NODE_ENV=test && mocha  --require @babel/register './test/**/*.{js,es6}' --exit "
   },
   "babel": {
     "presets": [

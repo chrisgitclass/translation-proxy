@@ -28,7 +28,7 @@ export const setUpPreprocessor = (conf) => {
       requestedPort = parseInt(matched[2]);
     }
 
-    let path = reqUrl.path;
+    let path = reqUrl.path;//.replace('/','');
     let query = null;
     if (rgxQuery.test(path)) {
       const queryMatched = rgxQuery.exec(path);

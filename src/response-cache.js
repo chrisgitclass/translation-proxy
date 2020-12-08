@@ -28,6 +28,7 @@ const getFullUrl = (reqObj, lang) => {
  */
 const getKey = (prefix, reqObj, lang) => {
   const reqStr = reqObj.method + '+' + getFullUrl(reqObj, lang);
+  //Logger.info(`-------------------reqObj----------${JSON.stringify(reqObj)}`);
   let key = prefix + crypto.createHash('md5').update(reqStr).digest('hex');
   return key;
 };
