@@ -153,7 +153,7 @@ export const loadPage = (html, conf) => {
         x.children().each((i, e) => dfs(e));
         return;
       }
-      if (curTotal + size > limit) {
+      if (curTotal + size > limit || temp.length >= 100) { // no more than 100 per chunk
         if (temp.length > 0) {
           r.push(temp);
           temp = [];

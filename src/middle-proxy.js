@@ -1,6 +1,10 @@
 
 import Logger from './logger.js';
 import { serverError, serviceUnavailable } from './error-handler.js';
+import { getCookie } from './cookie.js'
+import cheerio from 'cheerio';
+import { compressAsync, uncompressAsync } from './compress.js';
+import { config } from 'chai';
 
 const genReqOpts = (reqObj) => {
   const {id,  href, requestedHost, requestedPort, remoteIp, lang, scheme, rawHeaders, ...opts } = reqObj;
@@ -16,6 +20,9 @@ const genReqOpts = (reqObj) => {
 
 const logProxyRequest = (opts) => {
   let uri = opts.method + ' ' + opts.protocol + '://' + opts.host;
+  if(opts.path.includes("fontawe")){
+    Logger.info("doing fontawesome");
+  }
   if (opts.port) uri += ':' + opts.port;
   uri += opts.path;
   Logger.info(opts.id + ' PROXY REQUEST SEND: ' + uri);
@@ -38,7 +45,7 @@ const logProxyResponse = (res, opts) => {
   Logger.debug(res.headers);
 };
 
-export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, callback) => {
+export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, callback, conf) => {
   const ResponseHandler = responseHandler;
   const AgentSelector = agentSelector;
   const ResponseCache = cacheHandler;
@@ -64,32 +71,19 @@ export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, c
       serverError(e, res);
     });
 
-    const getCookie = (name) => {
-      // Split cookie string and get all individual name=value pairs in an array
-      Logger.info('COOKIE=',req.headers['cookie']);
-      if(req.headers['cookie']){
-        var cookieArr = req.headers['cookie'].split(";");
-        
-        // Loop through the array elements
-        for(var i = 0; i < cookieArr.length; i++) {
-            var cookiePair = cookieArr[i].split("=");
-            
-            /* Removing whitespace at the beginning of the cookie name
-            and compare it with the given string */
-            if(name == cookiePair[0].trim()) {
-                // Decode the cookie value and return
-                return decodeURIComponent(cookiePair[1]);
-            }
-        }
-    }
-    }
+   
     Logger.info(`-----reqOpts ${JSON.stringify(reqOpts)}`);
-    //const thost = "savewater.ca.gov";
-    const thost = "apache.org";
 
-    let jopt = JSON.stringify(reqOpts);
-    jopt = jopt.replace(reqOpts.host, thost);
-   // reqOpts = JSON.parse(jopt);
+    // Do remote call?
+    const thost = conf.targetHostName;    
+    if(thost){
+      // if separate hostname for target then replace
+      // all host with the targetname
+      let jopt = JSON.stringify(reqOpts);
+      const regExp = new RegExp(reqOpts.host, 'g');
+      jopt = jopt.replace(regExp, thost);
+      reqOpts = JSON.parse(jopt);
+    }
     
     Logger.info(`-----reqOpts2 ${JSON.stringify(reqOpts)}`);
     process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
@@ -97,7 +91,7 @@ export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, c
       const encoding = proxyRes.headers['content-encoding'];
       const isHtml = /text\/html/.test(proxyRes.headers['content-type']);
       /// SELECTEDLANG COOKIE STUFF
-      const cookieLang = getCookie('SELECTEDLANG');
+      const cookieLang = getCookie('SELECTEDLANG', req);
       const lang =  reqObj.lang ||cookieLang;
        reqObj.lang = lang;
       const needTranslation = isHtml && reqObj.lang && reqObj.lang != 'en';
@@ -112,7 +106,9 @@ export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, c
         headers['access-control-allow-origin'] = reqObj.host;
         delete headers['transfer-encoding'];
       }
-
+      if(isHtml){
+        console.log('----------------------HTML-----------------');
+      }
       const savedRes = {
         statusCode: proxyRes.statusCode,
         statusMessage: proxyRes.statusMessage,
@@ -145,12 +141,29 @@ export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, c
         if (!needTranslation) res.write(chunk);
       });
 
-      proxyRes.on('end', () => {
+      proxyRes.on('end', async () => {
         if (!needTranslation) {
           Logger.info(logPrefix + 'END WITHOUT PROCESSING');
           res.end();
         }
-        const buffer = Buffer.concat(body);
+        let buffer = Buffer.concat(body);
+
+
+        const shost = conf.serverHostName;
+        if(shost){
+          // replace hrefs in header to target serverhost
+          let doc = await uncompressAsync(buffer, savedRes.encoding);
+          const $ = cheerio.load(doc);
+          const reg = new RegExp(reqOpts.host, "g");
+          $('head')[0].children.forEach(c =>{
+            if(c.attribs && c.attribs.href) {
+              c.attribs.href = c.attribs.href.replace(reg, shost);
+            }
+          });
+          doc = $.html();
+          buffer = await compressAsync(doc, savedRes.encoding);
+        }
+
         savedRes.headers['content-length'] = buffer.length;
         ResponseCache.save(reqObj, null, savedRes, buffer);
         if (needTranslation) {

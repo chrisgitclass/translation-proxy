@@ -50,7 +50,7 @@ const setupRequestHandler = (conf) => {
   const MiddleFirewall = setUpMiddleFirewall(conf);
   const MiddleCachePurger = setUpMiddleCachePurger(ResponseCache);
   const MiddleCache = setUpMiddleCache(ResponseHandler, ResponseCache);
-  const MiddleProxy = setUpMiddleProxy(ResponseHandler, AgentSelector, ResponseCache);
+  const MiddleProxy = setUpMiddleProxy(ResponseHandler, AgentSelector, ResponseCache, null, conf);
 
   const RequestHandler = setUpRequestHandler();
   RequestHandler.use(MiddlePreprocessor);
@@ -74,6 +74,8 @@ export const createProxyServer = (conf) => {
 
   const serverHttpPort = conf.serverHttpPort || 80;
   const serverHttpsPort = conf.serverHttpsPort || 443;
+  const serverHostName = conf.serverHostName;
+  const targetHostName = conf.targetHostName;
   let httpServer;
   let httpsServer;
   let shuttingDown = false;
