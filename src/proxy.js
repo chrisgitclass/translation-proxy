@@ -115,10 +115,16 @@ export const createProxyServer = (conf) => {
 
   const start = () => {
     Logger.info('SERVER STARTED');
-    httpServer.listen(serverHttpPort, '0.0.0.0');
-    httpsServer.listen(serverHttpsPort, '0.0.0.0');
-    httpServer.isRunning = true;
-    httpsServer.isRunning = true;
+    if(serverHttpPort && serverHttpPort > 0){
+      httpServer.listen(serverHttpPort, '0.0.0.0');
+      httpServer.isRunning = true;
+    }
+
+    if(serverHttpsPort && serverHttpsPort > 0){
+      httpsServer.listen(serverHttpsPort, '0.0.0.0');
+      httpsServer.isRunning = true;
+    }
+
     running = true;
   }
 

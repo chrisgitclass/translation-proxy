@@ -1,31 +1,87 @@
-
 import util from 'util';
 import https from 'https';
 import childProcess from 'child_process';
 import cheerio from 'cheerio';
 import Logger from './logger.js';
+import jwt from 'jsonwebtoken';
 
-const exec = childProcess.exec;
+let access_token = '';
+let expire_time = Date.now();
+const EXPIRE_MINS = 60;
 
-const setLangAttribute = (html) => {
+const sign =  (payload, privateKey,  kid, $Options) => {
+  // Token signing options
+  var signOptions = {
+      issuer:  $Options.issuer,
+      subject:  $Options.subject,
+      audience:  $Options.audience,
+      expiresIn:  `${EXPIRE_MINS}m`,    // 30 min validity
+      algorithm:  "RS256",
+      header: {kid}  
+  };
+   return jwt.sign(payload, privateKey, signOptions);
 };
 
+const getJwt = (conf) => {
+  const jwtOptions = {
+    issuer: conf.googleIssuer,
+    subject: conf.googleSubject,
+    audience: conf.googleAudience
+  };
+  const jwt = sign({
+    scope: conf.googleScope,
+  }, conf.googlePrivateKey, conf.googlePrivatekeyId, jwtOptions);
+
+  return jwt;
+};
+
+
+
 const getApiKey = (conf) => {
-  const command = conf.gcloudPath + ' auth application-default print-access-token';
-  const env = { env: { 'GOOGLE_APPLICATION_CREDENTIALS': conf.keyPath } };
+  const data = JSON.stringify({
+    assertion: getJwt(conf),
+    grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer'
+  })
+  const options = {
+    hostname: 'oauth2.googleapis.com',
+    port: 443,
+    path: '/token',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': data.length
+    }
+  }
+  let token_string = '';
 
   return new Promise((resolve, reject) => {
-    exec(command, env, (error, stdout, stderr) => {
-      if (error) {
-        Logger.error('Translate#getApiKey: ');
-        Logger.error(error);
-        return reject(error);
-      }
-      if (stderr) {
-        Logger.error('Translate#getApiKey: ' + stderr);
-      }
-      resolve(stdout.toString().trim());
+    if (access_token && Date.now() < expire_time - 10000) {
+      Logger.info(`reusing valid token which expires in ${(expire_time - Date.now()) / (1000 * EXPIRE_MINS)} minutes  time: ${new Date(expire_time)}`);
+      return resolve(access_token);
+    }
+    const req = https.request(options, res => {
+      res.on('data', d => {
+        token_string = token_string + d;
+      });
+      res.on('end', d => {
+        if (d) {
+          token_string = token_string + d;
+        }
+        const token = JSON.parse(token_string);
+        const expires_in = token['expires_in'];
+        expire_time = Date.now() + (Number(expires_in) * 1000); 
+        access_token = token['access_token'];
+        return resolve(access_token);
+      })
+    })
+    req.on('error', error => {
+      Logger.error('GetAccessTokenError: ');
+      Logger.error(error);
+      return reject(error);
     });
+
+    req.write(data);
+    req.end();
   });
 };
 
@@ -91,10 +147,10 @@ export const createPostData = (html, lang, conf) => {
   return extractTexts(html, conf)
     .then((q) => {
       return {
-      source: 'en',
-      target: lang,
-      format: 'html',
-      q
+        source: 'en',
+        target: lang,
+        format: 'html',
+        q
       }
     })
 };
@@ -105,7 +161,7 @@ export const createPostData = (html, lang, conf) => {
  */
 export const callTranslateApi = (opts, data) => {
   return new Promise((resolve, reject) => {
-    Logger.info('TRANSLATE CALL API');
+    Logger.info(`TRANSLATE CALL API opts: ${JSON.stringify(opts)}`);
     const req = https.request(opts, (res) => {
       let body = '';
 

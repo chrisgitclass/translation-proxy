@@ -52,7 +52,7 @@ export const setUpResponseHandler = (translateFunc, cacheHandler) => {
     res.end(buffer);
   }
 
-  ResponseHandler.sendTranslation = async (res, buffer, reqObj, proxyResObj, logPrefix) => {
+  ResponseHandler.sendTranslation = async (res, buffer, reqObj, proxyResObj, logPrefix, scripts, styles) => {
     const doc = await uncompressAsync(buffer, proxyResObj.encoding);
     let gzipped;
     let pageType = 'TRANSLATED PAGE';
@@ -65,6 +65,33 @@ export const setUpResponseHandler = (translateFunc, cacheHandler) => {
         gzipped = await compressAsync(injectAlert(doc, err), proxyResObj.encoding);
         proxyResObj.headers['content-length'] = gzipped.length;
       } else {
+        //now add back in scripts....
+        if(scripts && scripts.length > 0){
+          console.log(`translatedHtml length pre is ${translatedHtml.length}`);
+          const $ = cheerio.load(translatedHtml);
+          scripts.forEach((v,i) => {
+            const scriptAdd = `<script>${v.children[0].data}</script>`;
+            console.log(`ADDING ${scriptAdd.length}`);
+            $('body').append(scriptAdd);
+          });
+          translatedHtml = $.html();
+          console.log(`translatedHtml length post is ${translatedHtml.length}`);
+        }
+        //now add back in styles....
+        if(styles && styles.length > 0){
+          console.log(`translatedHtml no style length pre is ${translatedHtml.length}`);
+          const $ = cheerio.load(translatedHtml);
+          styles.forEach((v,i) => {
+            const styleAdd = `<style type="text/css" id="${v.attribs.id}">${v.children[0].data}</style>`;
+            console.log(`ADDING style ${styleAdd}`);
+            $('body').append(styleAdd);
+          });
+          translatedHtml = $.html();
+          console.log(`translatedHtml with style length post is ${translatedHtml.length}`);
+        }
+
+
+
         gzipped = await compressAsync(translatedHtml, proxyResObj.encoding);
         proxyResObj.headers['content-length'] = gzipped.length;
         ResponseCache.save(reqObj, proxyResObj.lang, proxyResObj, gzipped);

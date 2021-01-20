@@ -45,6 +45,7 @@ const appendToFile = (label, msg) => {
   fs.appendFile(logFile, logFormat(label, msg), (err) => {
     if (err) throw err;
   });
+  process.stdout.write(logFormat(label, msg));
 };
 
 let append = writeToStdout;

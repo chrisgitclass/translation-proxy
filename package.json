@@ -5,6 +5,7 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
+    "start": "node src/server.js",
     "exec": "nodemon src/server.js",
     "serv": "babel-node src/server.js",
     "build": "babel src --out-dir dist -s",
@@ -44,8 +45,10 @@
     "cheerio": "^1.0.0-rc.2",
     "core-js": "^3.6.5",
     "dateformat": "^3.0.3",
+    "dotenv": "^8.2.0",
     "fs-extra": "^7.0.1",
     "http-proxy": "^1.18.0",
+    "jsonwebtoken": "^8.5.1",
     "redis": "^2.8.0",
     "regenerator-runtime": "^0.13.5",
     "request-ip": "^2.1.3",

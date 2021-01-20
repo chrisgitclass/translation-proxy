@@ -1,5 +1,4 @@
 {
-  "cacheEnabled": true,
   "cacheSkipUrls": ["do-not-cache-if-requested-url-contains-keyword"],
   "cacheSkipCookies": ["do-not-cache-if-request-contains-cookie"],
   "cacheShortTTL": 60,
@@ -20,10 +19,6 @@
   "domBreakdownThreshold": 250,
   "keyPath": "/path/to/key.json",
   "gcloudPath": "/path/to/google-cloud-sdk/bin/gcloud",
-  "serverHttpPort": 80,
-  "serverHttpsPort": 443,
-  "targetHttpPort": 80,
-  "targetHttpsPort": 443,
   "shutdownGrace": 3000,
   "sslCert": "./certs/test.pem",
   "sslKey": "./certs/test.key",

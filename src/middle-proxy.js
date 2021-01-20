@@ -45,6 +45,65 @@ const logProxyResponse = (res, opts) => {
   Logger.debug(res.headers);
 };
 
+const convertHttpToHttps = (reqOpts, conf) => {
+  const re = /http/gi;
+  Object.keys(reqOpts).forEach(key => {
+    if (typeof(reqOpts[key]) === 'string' && reqOpts[key].indexOf('https') < 0 && reqOpts[key].indexOf('http') >= 0 ) {
+      reqOpts[key] = reqOpts[key].replace(re, 'https');
+    }
+    if (typeof(reqOpts[key]) === 'string' && reqOpts[key].indexOf('https') < 0 && reqOpts[key].indexOf('http') >= 0 ) {
+      reqOpts[key] = reqOpts[key].replace(re, 'https');
+    }
+    if (typeof(reqOpts[key]) === 'string' ) {
+      reqOpts[key] = reqOpts[key].replace(conf.serverHostName, conf.serverTargetName);
+    }
+    if ( reqOpts[key] == 80 ) {
+      reqOpts[key] = 443;
+    }
+    else if (typeof(reqOpts[key]) === 'object'){
+      Object.keys(reqOpts[key]).forEach(key2 => {
+        if (typeof(reqOpts[key][key2]) === 'string' && reqOpts[key][key2].indexOf('https') < 0 && reqOpts[key][key2].indexOf('http') >= 0 ) {
+          console.log(reqOpts[key][key2]);
+          reqOpts[key][key2] = reqOpts[key][key2].replace(re, 'https');
+          console.log(reqOpts[key][key2]);
+        }
+        if (typeof(reqOpts[key][key2]) === 'string' ) {
+          reqOpts[key][key2] = reqOpts[key][key2].replace(conf.serverHostName, conf.serverTargetName);
+        }
+        if ( reqOpts[key][key2] == 80 ) {
+          reqOpts[key][key2] = 443;
+        }
+      });            
+    }
+  });
+}
+
+const RemoveScriptsAndStyles = ($,scripts, styles) => {
+  // temporarily remove all script and styles before translation...., translation will readd them.
+  if($('body > script').length > 0){
+    $('body > script').each((i,e) => {
+      console.log(`${i}=${JSON.stringify(e.attribs['src'])}`);
+      if(!e.attribs['src']){
+        scripts.push(e);
+      }
+    });
+    $('body > script').each(function(){ 
+      if(!$(this).attr("src")){
+          $(this).remove();  
+      } 
+    });
+  }
+  if($('body > style').length > 0){
+    $('body > style').each((i,e) => {
+      console.log(`${i}=${JSON.stringify(e.attribs['src'])}`);
+        styles.push(e);
+    });
+    $('body > style').each(function(){ 
+      $(this).remove();  
+    });
+  }
+}
+
 export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, callback, conf) => {
   const ResponseHandler = responseHandler;
   const AgentSelector = agentSelector;
@@ -53,7 +112,7 @@ export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, c
   return (req, res, next) => {
     const reqObj = res.locals.reqObj;
     let reqOpts = genReqOpts(reqObj);
-    const agent = AgentSelector.select(req);
+    const agent = AgentSelector.select(req, conf);
     logProxyRequest(reqObj);
 
     res.on('error', (e) => {
@@ -86,6 +145,7 @@ export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, c
     }
     
     Logger.info(`-----reqOpts2 ${JSON.stringify(reqOpts)}`);
+    convertHttpToHttps(reqOpts, conf);
     process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
     const proxyReq = agent.request(reqOpts, (proxyRes) => {
       const encoding = proxyRes.headers['content-encoding'];
@@ -145,11 +205,14 @@ export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, c
         if (!needTranslation) {
           Logger.info(logPrefix + 'END WITHOUT PROCESSING');
           res.end();
+          return;
         }
         let buffer = Buffer.concat(body);
 
 
         const shost = conf.serverHostName;
+        const scripts = [];
+        const styles = [];
         if(shost){
           // replace hrefs in header to target serverhost
           let doc = await uncompressAsync(buffer, savedRes.encoding);
@@ -160,6 +223,7 @@ export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, c
               c.attribs.href = c.attribs.href.replace(reg, shost);
             }
           });
+          RemoveScriptsAndStyles($, scripts, styles);
           doc = $.html();
           buffer = await compressAsync(doc, savedRes.encoding);
         }
@@ -167,7 +231,7 @@ export const setUpMiddleProxy = (responseHandler, agentSelector, cacheHandler, c
         savedRes.headers['content-length'] = buffer.length;
         ResponseCache.save(reqObj, null, savedRes, buffer);
         if (needTranslation) {
-          ResponseHandler.sendTranslation(res, buffer, reqObj, savedRes, logPrefix);
+          ResponseHandler.sendTranslation(res, buffer, reqObj, savedRes, logPrefix, scripts, styles);
         }
       });
     });

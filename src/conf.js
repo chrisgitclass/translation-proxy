@@ -19,7 +19,7 @@ export const loadConfig = (file, updates) => {
     conf = { ...conf, ...updates };
   }
   //Logger.initialize(conf);
-  console.log(conf);
+  console.log({...conf,  googlePrivateKey: '' });
   return conf;
 };
 

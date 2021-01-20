@@ -1,5 +1,4 @@
 {
-  "cacheEnabled": false,
   "cacheSkipUrls": ["do-not-cache-if-requested-url-contains-keyword"],
   "cacheSkipCookies": ["do-not-cache-if-request-contains-cookie"],
   "cacheShortTTL": 60,
@@ -12,28 +11,10 @@
       { "type": "image",           "ttl": 604800 },
       { "type": "default",         "ttl": 604800 }
   ],
-  
-  "proxiedHosts": ["localhost"],
-  "purgeAllowedIps": ["127.0.0.1"],
-  "translationSelectors": ["body"] ,
   "maxPageSize": 80000,
   "maxTextPerRequest": 30000,
   "domBreakdownThreshold": 250,
-  "keyPath1": "c:/Users/chris/downloads/chris-translation-1-74107fc9c012.json",
-  "keyPath": "c:/Users/chris/Downloads/documenttranslationcredentials (1).json",
-  "gcloudPath": "\"C:/Users/chris/AppData/Local/Google/Cloud SDK/google-cloud-sdk/bin/gcloud\"",
-  "serverHttpPort": 80,
-  "serverHttpsPort": 443,
-  "serverHostName": "localhost",
-  "targetHttpPort": 80,
-  "targetHttpsPort": 443,
-  "targetHostName": "cdt.ca.gov",
   "shutdownGrace": 3000,
   "sslCert": "./certs/test.pem",
-  "sslKey": "./certs/test.key",
-  "redisHost": "127.0.0.1",
-  "redisPort": 6379,
-  "enableLog": true,
-  "logLevel": "info",
-  "logDir": "./logs"
+  "sslKey": "./certs/test.key"
 }

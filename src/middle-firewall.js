@@ -21,7 +21,7 @@ export const setUpMiddleFirewall = (conf) => {
       }
     }
 
-    if (proxiedHosts[reqObj.host]) {
+    if (proxiedHosts.indexOf(reqObj.host) >= 0) {
       next();
       return;
     }
